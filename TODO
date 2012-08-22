@@ -1,0 +1,14 @@
+TODOs:
+* Resolve consistent-offset false positives
+* Rework/Integrate drift-log.py
+* Integrate trinity adjtimex/settimeofday fuzzer?
+* Convert meta-tests to knob tweaking tools & use controlling scripts
+  to mix running the two?
+
+Tests to write:
+* Create adjtimex offset insertion test
+* Create adjtimex tick/offset adjustment test
+* Some sort of NTP syncing & convergence test (hard)
+* Suspend/resume testing
+* Add RTC tests to the mix
+
