@@ -70,6 +70,17 @@ int get_clocksources(char list[][30])
 	return i-1;
 }
 
+int get_cur_clocksource(char *buf, size_t size)
+{
+	int fd, i, count;
+	char *head, *tmp;
+
+	fd = open("/sys/devices/system/clocksource/clocksource0/current_clocksource", O_RDONLY);
+
+	size = read(fd, buf,size);
+
+	return 0;
+}
 
 int change_clocksource(char *clocksource)
 {
@@ -93,11 +104,16 @@ int change_clocksource(char *clocksource)
 }
 
 
-int run_tests(void)
+int run_tests(int secs)
 {
 	int ret;
-	ret = system("./inconsistency-check");
-	ret |= system("./nanosleep");
+	char buf[255];
+
+	sprintf(buf, "./inconsistency-check -t %i", secs);
+	ret = system(buf);
+	if (ret)
+		return ret;
+	ret = system("./nanosleep");
 	return ret;
 }
 
@@ -106,9 +122,11 @@ char clocksource_list[10][30];
 
 int main(int argv, char** argc)
 {
-
+	char orig_clk[512];
 	int count, i, status;
 	pid_t pid, w;
+
+	get_cur_clocksource(orig_clk, 512);
 
 	count = get_clocksources(clocksource_list);
 
@@ -117,13 +135,32 @@ int main(int argv, char** argc)
 		return -1;
 	}
 
+	/* Check everything is sane before we start switching asyncrhonously */
+	for(i=0;i<count; i++) {
+		printf("Validating clocksource %s\n", clocksource_list[i]);
+		if (change_clocksource(clocksource_list[i])) {
+			status = -1;
+			goto out;
+		}
+		if (run_tests(5)) {
+			status = -1;
+			goto out;
+		}
+	}
+
+
+	printf("Running Asyncrhonous Switching Tests...\n");
 	pid = fork();
 	if (!pid)
-		return run_tests();
+		return run_tests(60);
 
 	while(pid != waitpid(pid, &status, WNOHANG))
 		for(i=0;i<count; i++)
-			if (change_clocksource(clocksource_list[i]))
-				return -1;
+			if (change_clocksource(clocksource_list[i])) {
+				status = -1;
+				goto out;
+			}
+out:
+	change_clocksource(orig_clk);
 	return status;
 }
