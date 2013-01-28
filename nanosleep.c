@@ -1,6 +1,8 @@
 /* Make sure timers don't return early
  *              by: john stultz (johnstul@us.ibm.com)
+ *		    John Stultz (john.stultz@linaro.org)
  *              (C) Copyright IBM 2012
+ *              (C) Copyright Linaro 2013
  *              Licensed under the GPLv2
  *
  *  To build:
@@ -92,14 +94,27 @@ struct timespec timespec_add(struct timespec ts, unsigned long long ns)
 
 int nanosleep_test(int clockid, long long ns)
 {
-	struct timespec now, target;
+	struct timespec now, target, rel;
 
+	/* First check abs time */
 	if (clock_gettime(clockid, &now))
 		return UNSUPPORTED;
 	target = timespec_add(now, ns);
 
 	if (clock_nanosleep(clockid, TIMER_ABSTIME, &target, NULL))
 		return UNSUPPORTED;
+	clock_gettime(clockid, &now);
+
+	if (!in_order(target, now))
+		return -1;
+
+	/* Second check reltime */
+	clock_gettime(clockid, &now);
+	rel.tv_sec = 0;
+	rel.tv_nsec = 0;
+	rel = timespec_add(rel, ns);
+	target = timespec_add(now, ns);
+	clock_nanosleep(clockid, 0, &rel, NULL);
 	clock_gettime(clockid, &now);
 
 	if (!in_order(target, now))
