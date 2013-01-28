@@ -11,4 +11,6 @@ Tests to write:
 * Some sort of NTP syncing & convergence test (hard)
 * Suspend/resume testing
 * Add RTC tests to the mix
-
+* Add more timer related tests
+* Check for clock granularity changes
+* Add TAI support to tests
