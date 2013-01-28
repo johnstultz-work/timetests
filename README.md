@@ -28,4 +28,4 @@ I also reccomend using the trinity test suite:
 If have any fixes or even suggestions for new tests, please
 email me!
 
-	John Stultz <johnstul@us.ibm.com>
+	John Stultz <john.stultz@linaro.org>
