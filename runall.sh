@@ -20,6 +20,16 @@ echo "Nanosleep timers check:"
 echo "======================="
 ./nanosleep
 
+echo
+echo "Nanosleep latency check:"
+echo "======================="
+./nsleep-rel-lat
+
+echo
+echo "Mqueue latency check:"
+echo "======================="
+./mqueue-lat
+
 
 # "destructive tests" that may change the date, insert leapseconds, etc
 echo
