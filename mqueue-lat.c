@@ -36,47 +36,6 @@
 #define UNRESONABLE_LATENCY 	40000000 	/* 40ms in nanosecs */
 
 
-#define CLOCK_REALTIME			0
-#define CLOCK_MONOTONIC			1
-#define CLOCK_PROCESS_CPUTIME_ID	2
-#define CLOCK_THREAD_CPUTIME_ID		3
-#define CLOCK_MONOTONIC_RAW		4
-#define CLOCK_REALTIME_COARSE		5
-#define CLOCK_MONOTONIC_COARSE		6
-#define CLOCK_BOOTTIME			7
-#define CLOCK_REALTIME_ALARM		8
-#define CLOCK_BOOTTIME_ALARM		9
-#define NR_CLOCKIDS			10
-
-#define UNSUPPORTED 0xf00f
-
-char *clockstring(int clockid)
-{
-	switch (clockid) {
-	case CLOCK_REALTIME:
-		return "CLOCK_REALTIME";
-	case CLOCK_MONOTONIC:
-		return "CLOCK_MONOTONIC";
-	case CLOCK_PROCESS_CPUTIME_ID:
-		return "CLOCK_PROCESS_CPUTIME_ID";
-	case CLOCK_THREAD_CPUTIME_ID:
-		return "CLOCK_THREAD_CPUTIME_ID";
-	case CLOCK_MONOTONIC_RAW:
-		return "CLOCK_MONOTONIC_RAW";
-	case CLOCK_REALTIME_COARSE:
-		return "CLOCK_REALTIME_COARSE";
-	case CLOCK_MONOTONIC_COARSE:
-		return "CLOCK_MONOTONIC_COARSE";
-	case CLOCK_BOOTTIME:
-		return "CLOCK_BOOTTIME";
-	case CLOCK_REALTIME_ALARM:
-		return "CLOCK_REALTIME_ALARM";
-	case CLOCK_BOOTTIME_ALARM:
-		return "CLOCK_BOOTTIME_ALARM";
-	};
-	return "UNKNOWN_CLOCKID";
-}
-
 long long timespec_sub(struct timespec a, struct timespec b)
 {
 	long long ret = NSEC_PER_SEC * b.tv_sec + b.tv_nsec;
