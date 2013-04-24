@@ -87,13 +87,13 @@ int nanosleep_lat_test(int clockid)
 	struct timespec start, end, target;
 	int i, count;
 
+	target.tv_sec = 0;
+	target.tv_nsec = 1;
+
 	if (clock_gettime(clockid, &start))
 		return UNSUPPORTED;
 	if (clock_nanosleep(clockid, 0, &target, NULL))
 		return UNSUPPORTED;
-
-	target.tv_sec = 0;
-	target.tv_nsec = 1;
 
 	count = 1000;
 
