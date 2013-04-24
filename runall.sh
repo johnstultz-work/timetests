@@ -5,10 +5,11 @@ echo "Consistency check:"
 echo "=================="
 ./inconsistency-check
 
-echo
-echo "Offset check:"
-echo "============="
-./consistent-offsets
+# XXX Offset check gives too many false positives. Skip for now
+#echo
+#echo "Offset check:"
+#echo "============="
+#./consistent-offsets
 
 echo
 echo "Raw skew check:"
