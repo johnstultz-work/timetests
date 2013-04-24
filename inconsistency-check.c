@@ -43,7 +43,9 @@ extern char *optarg;
 #define CLOCK_BOOTTIME			7
 #define CLOCK_REALTIME_ALARM		8
 #define CLOCK_BOOTTIME_ALARM		9
-#define NR_CLOCKIDS			10
+#define CLOCK_HWSPECIFIC		10
+#define CLOCK_TAI			11
+#define NR_CLOCKIDS			12
 
 char *clockstring(int clockid)
 {
@@ -68,6 +70,8 @@ char *clockstring(int clockid)
 		return "CLOCK_REALTIME_ALARM";
 	case CLOCK_BOOTTIME_ALARM:
 		return "CLOCK_BOOTTIME_ALARM";
+	case CLOCK_TAI:
+		return "CLOCK_TAI";
 	};
 	return "UNKNOWN_CLOCKID";
 }
@@ -176,6 +180,10 @@ int main(int argc, char *argv[])
 	}
 
 	for (clockid=userclock; clockid < maxclocks; clockid++) {
+
+		if (clockid == CLOCK_HWSPECIFIC)
+			continue;
+
 		if (!clock_gettime(clockid, &ts)) {
 			printf("Consistent %-30s: ", clockstring(clockid));
 			if (consistency_test(clockid, runtime))

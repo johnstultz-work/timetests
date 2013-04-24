@@ -40,7 +40,9 @@
 #define CLOCK_BOOTTIME			7
 #define CLOCK_REALTIME_ALARM		8
 #define CLOCK_BOOTTIME_ALARM		9
-#define NR_CLOCKIDS			10
+#define CLOCK_HWSPECIFIC		10
+#define CLOCK_TAI			11
+#define NR_CLOCKIDS			12
 
 #define UNSUPPORTED 0xf00f
 
@@ -67,6 +69,8 @@ char *clockstring(int clockid)
 		return "CLOCK_REALTIME_ALARM";
 	case CLOCK_BOOTTIME_ALARM:
 		return "CLOCK_BOOTTIME_ALARM";
+	case CLOCK_TAI:
+		return "CLOCK_TAI";
 	};
 	return "UNKNOWN_CLOCKID";
 }
@@ -112,7 +116,8 @@ int main(int argc, char** argv)
 
 		/* Skip cputime clockids since nanosleep won't increment cputime */
 		if (clockid == CLOCK_PROCESS_CPUTIME_ID ||
-				clockid == CLOCK_THREAD_CPUTIME_ID)
+				clockid == CLOCK_THREAD_CPUTIME_ID ||
+				clockid == CLOCK_HWSPECIFIC)
 			continue;
 
 		printf("Nanosleep %-31s: ", clockstring(clockid));
