@@ -31,6 +31,11 @@ echo "Mqueue latency check:"
 echo "======================="
 ./mqueue-lat
 
+echo
+echo "Alarmtimer suspend check:"
+echo "========================="
+./alarmtimer-suspend
+
 
 # "destructive tests" that may change the date, insert leapseconds, etc
 echo
