@@ -42,6 +42,7 @@ echo
 echo "Adjtimex freq adjustment tests:"
 echo "==============================="
 ./change_skew
+./skew_consistency
 
 echo
 echo "Clocksource changing tests:"
