@@ -108,7 +108,6 @@ def find_cmd(possibilities):
 
 
 
-server_default = "yourserverhere"
 sleep_time_default  = 60
 
 set_time = 0
@@ -127,14 +126,6 @@ for arg in sys.argv[1:]:
 	elif loops == -1:
 		loops = string.atoi(arg)
 
-if server == "":
-	server = server_default
-if sleep_time == 0:
-	sleep_time = sleep_time_default
-
-print "Checking", server, "every", sleep_time, "secs", loops , "times"
-
-
 #Find utility paths
 ntpdate_possibilities = ["/usr/sbin/ntpdate", "/usr/bin/ntpdate"]
 ntpdc_possibilities = ["/usr/sbin/ntpdc", "/usr/bin/ntpdc"]
@@ -144,6 +135,18 @@ ntpdc_cmd = find_cmd(ntpdc_possibilities)
 
 #get current ntpd server name
 ntpdc_server = ntpdc_sysinfo_server(ntpdc_cmd)
+
+
+if server == "":
+	server = ntpdc_server
+
+if sleep_time == 0:
+	sleep_time = sleep_time_default
+
+print "Checking", server, "every", sleep_time, "secs", loops , "times"
+
+
+#check specified server is the same as ntpdc server
 ip1 = string.split(commands.getoutput('host ' + server))
 ip2 = string.split(commands.getoutput('host ' + ntpdc_server))
 if ip1[-1] != ip2[-1]:
