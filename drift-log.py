@@ -164,11 +164,6 @@ print "=========================================================================
 
 i = 0
 while 1:
-	i = i + 1
-	if (loops == -1):
-		i = 0
-	elif (i > loops):
-		break
 	
 	#get time right now
 	now_time = time.time()
@@ -187,4 +182,10 @@ while 1:
 
 	sys.stdout.flush()
 	
+	i = i + 1
+	if (loops == -1):
+		i = 0
+	elif (i > loops):
+		break
+
 	time.sleep(sleep_time)
