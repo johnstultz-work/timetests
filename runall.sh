@@ -56,6 +56,11 @@ echo "=================="
 ./leap-a-day -s -i 10
 ./leapcrash
 
+echo
+echo "TAI setting tests:"
+echo "=================="
+./set-tai
+
 
 # time value edge cases
 echo
