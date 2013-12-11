@@ -50,6 +50,7 @@
 extern char *optarg;
 
 #define NSEC_PER_SEC 1000000000ULL
+#define CLOCK_TAI 11
 
 /* returns 1 if a <= b, 0 otherwise */
 static inline int in_order(struct timespec a, struct timespec b)
@@ -139,13 +140,14 @@ void test_hrtimer_failure(void)
 int main(int argc, char** argv) 
 {
 	int settime = 0;
+	int tai_time = 0;
 	int insert = 1;
 	int iterations = -1;
 	int opt;
 
 
 	/* Process arguments */
-	while ((opt = getopt(argc, argv, "si:"))!=-1) {
+	while ((opt = getopt(argc, argv, "sti:"))!=-1) {
 		switch(opt) {
 		case 's':
 			printf("Setting time to speed up testing\n");
@@ -154,10 +156,23 @@ int main(int argc, char** argv)
 		case 'i':
 			iterations = atoi(optarg);
 			break;
+		case 't':
+			tai_time = 1;
+			break;
 		default:
 			printf("Usage: %s [-s] [-i <iterations>]\n", argv[0]);
 			printf("	-s: Set time to right before leap second each iteration\n");
 			printf("	-i: Number of iterations\n");
+			printf("	-t: Print TAI time\n");
+			exit(-1);
+		}
+	}
+
+	/* Make sure TAI support is present if -t was used */
+	if (tai_time) {
+		struct timespec ts;
+		if (clock_gettime(CLOCK_TAI, &ts)) {
+			printf("System doesn't support CLOCK_TAI\n");
 			exit(-1);
 		}
 	}
@@ -218,8 +233,16 @@ int main(int argc, char** argv)
 			return -1;
 		}
 
+
+		if (tai_time) {
+			printf("Using TAI time,"
+				" no inconsistencies should be seen!\n");
+		}
+
 		printf("Scheduling leap second for %s", ctime(&next_leap));
-	
+
+
+
 		/* Wake up 3 seconds before leap */
 		ts.tv_sec = next_leap - 3;
 		ts.tv_nsec = 0;
@@ -243,15 +266,26 @@ int main(int argc, char** argv)
 		now = tx.time.tv_sec;
 		while (now < next_leap+2) {
 			char buf[26];
+			struct timespec tai;
 			ret = adjtimex(&tx);
 
-			ctime_r(&tx.time.tv_sec, buf);
-			buf[strlen(buf)-1] = 0; /*remove trailing\n */
 
-			printf("%s + %6ld us\t%s\n",
-					buf,
-					tx.time.tv_usec, 
-					time_state_str(ret));
+			if (tai_time) {
+				clock_gettime(CLOCK_TAI, &tai);
+				printf("%ld sec, %9ld ns\t%s\n",
+						tai.tv_sec,
+						tai.tv_nsec,
+						time_state_str(ret));
+			} else {
+				ctime_r(&tx.time.tv_sec, buf);
+				buf[strlen(buf)-1] = 0; /*remove trailing\n */
+
+				printf("%s + %6ld us (%i)\t%s\n",
+						buf,
+						tx.time.tv_usec,
+						tx.tai,
+						time_state_str(ret));
+			}
 			now = tx.time.tv_sec;
 			/* Sleep for another half second */
 			ts.tv_sec = 0;
