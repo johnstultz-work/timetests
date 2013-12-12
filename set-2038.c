@@ -63,6 +63,7 @@ int do_tests(void)
 	system("date");
 	ret = system("./inconsistency-check -c 0 -t 20");
 	ret |= system("./nanosleep");
+	ret |= system("./nsleep-lat");
 	return ret;
 
 }
