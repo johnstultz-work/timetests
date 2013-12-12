@@ -1,10 +1,10 @@
-/* Measure nanosleep relative timer latency
+/* Measure nanosleep timer latency
  *              by: john stultz (john.stultz@linaro.org)
  *		(C) Copyright Linaro 2013
  *              Licensed under the GPLv2
  *
  *  To build:
- *	$ gcc nsleep-rel-lat.c -o nsleep-rel-lat -lrt
+ *	$ gcc nsleep-lat.c -o nsleep-lat -lrt
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -75,6 +75,17 @@ char *clockstring(int clockid)
 	return "UNKNOWN_CLOCKID";
 }
 
+struct timespec timespec_add(struct timespec ts, unsigned long long ns)
+{
+	ts.tv_nsec += ns;
+	while(ts.tv_nsec >= NSEC_PER_SEC) {
+		ts.tv_nsec -= NSEC_PER_SEC;
+		ts.tv_sec++;
+	}
+	return ts;
+}
+
+
 long long timespec_sub(struct timespec a, struct timespec b)
 {
 	long long ret = NSEC_PER_SEC * b.tv_sec + b.tv_nsec;
@@ -82,31 +93,51 @@ long long timespec_sub(struct timespec a, struct timespec b)
 	return ret;
 }
 
-int nanosleep_lat_test(int clockid)
+int nanosleep_lat_test(int clockid, long long ns)
 {
 	struct timespec start, end, target;
+	long long latency;
 	int i, count;
 
-	target.tv_sec = 0;
-	target.tv_nsec = 1;
+	target.tv_sec = ns/NSEC_PER_SEC;
+	target.tv_nsec = ns%NSEC_PER_SEC;
 
 	if (clock_gettime(clockid, &start))
 		return UNSUPPORTED;
 	if (clock_nanosleep(clockid, 0, &target, NULL))
 		return UNSUPPORTED;
 
-	count = 1000;
+	count = 10;
 
+	/* First check relative latency */
 	clock_gettime(clockid, &start);
 	for (i=0;i<count;i++)
 		clock_nanosleep(clockid, 0, &target, NULL);
 	clock_gettime(clockid, &end);
 
-	if ((timespec_sub(start, end)/count) > UNRESONABLE_LATENCY)
+	if (((timespec_sub(start, end)/count)-ns) > UNRESONABLE_LATENCY) {
+		printf("Large rel latency: %lld ns :", (timespec_sub(start, end)/count)-ns);
 		return -1;
+	}
+
+	/* Next check absolute latency */
+	for (i=0;i<count;i++) {
+		clock_gettime(clockid, &start);
+		target = timespec_add(start, ns);
+		clock_nanosleep(clockid, TIMER_ABSTIME, &target, NULL);
+		clock_gettime(clockid, &end);
+		latency += timespec_sub(target, end);
+	}
+
+	if (latency/count > UNRESONABLE_LATENCY) {
+		printf("Large abs latency: %lld ns :", latency/count);
+		return -1;
+	}
 
 	return 0;
 }
+
+
 
 int main(int argc, char** argv)
 {
@@ -122,7 +153,15 @@ int main(int argc, char** argv)
 
 		printf("Nanosleep %-31s: ", clockstring(clockid));
 
-		ret = nanosleep_lat_test(clockid);
+		length = 10;
+		while (length <= (NSEC_PER_SEC * 10)) {
+			ret = nanosleep_lat_test(clockid, length);
+			if (ret)
+				break;
+			length *= 100;
+
+		}
+
 		if (ret == UNSUPPORTED) {
 			printf("UNSUPPORTED\n");
 			continue;

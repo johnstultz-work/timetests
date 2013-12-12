@@ -24,7 +24,7 @@ echo "======================="
 echo
 echo "Nanosleep latency check:"
 echo "======================="
-./nsleep-rel-lat
+./nsleep-lat
 
 echo
 echo "Mqueue latency check:"
