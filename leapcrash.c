@@ -87,7 +87,7 @@ int  main(void)
 			printf("Error: You're likely not running with proper (ie: root) permissions\n");
 			exit(-1);
 		}
-
+		tx.modes = 0;
 		adjtimex(&tx);
 
 		/* hammer on adjtime w/ STA_INS */
