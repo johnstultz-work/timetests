@@ -96,7 +96,7 @@ long long timespec_sub(struct timespec a, struct timespec b)
 int nanosleep_lat_test(int clockid, long long ns)
 {
 	struct timespec start, end, target;
-	long long latency;
+	long long latency = 0;
 	int i, count;
 
 	target.tv_sec = ns/NSEC_PER_SEC;
