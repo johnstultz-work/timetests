@@ -83,7 +83,7 @@ pid_t run_driftlog(char *server, long runtime, char* logfile)
 	int ret;
 	char buf[256];
 
-	sprintf(buf, "./drift-log.py %s 60 %ld > %s", server, runtime, logfile);
+	sprintf(buf, "./drift-log.py %s 60 %ld | tee %s", server, runtime, logfile);
 
 	pid = fork();
 	if (!pid) {
