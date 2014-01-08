@@ -160,10 +160,12 @@ int main(int argc, char** argv)
 {
 	int ret, opt;
 	pid_t pid;
+	char *logfile = NULL;
 	char* server = "91.189.89.199";
-	char* logfile = "drift-log.output";
 	long offset = 50000000; /*nsecs*/
 	long runtime = 30; /*mins*/
+	time_t now;
+
 
 	/*
 	 * XXX Still TODO:
@@ -194,6 +196,16 @@ int main(int argc, char** argv)
 			printf("	-r <min>: Runtime in minutes\n");
 			exit(-1);
 		}
+	}
+
+
+	/* Set the log file name to be based on the current time */
+	if (!logfile) {
+		now = time(NULL);
+		logfile = malloc(256);
+		if (!logfile)
+			exit(-1);
+		strftime(logfile, 256,"%d_%b_%Y_%T_%z.driftlog", localtime(&now));
 	}
 
 	if (getuid()) {
