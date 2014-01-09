@@ -41,6 +41,9 @@
 #define CONF_FILE "/tmp/myntp.conf"
 #define DRIFT_FILE "/tmp/myntp.drift"
 
+//#define MINMAXPOLL "minpoll 4 maxpoll 4"
+#define MINMAXPOLL ""
+
 extern char *optarg;
 
 
@@ -136,8 +139,7 @@ void generate_ntp_conf(char *server)
 		"restrict ::1\n";
 
 	char buf[256];
-	sprintf(buf, "server %s\n", server);
-
+	sprintf(buf, "server %s %s\n", server, MINMAXPOLL);
 
 	fd = open(CONF_FILE, O_CREAT|O_TRUNC|O_WRONLY, S_IRUSR|S_IWUSR);
 	if(fd < 0)
