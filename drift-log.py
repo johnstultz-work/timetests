@@ -143,7 +143,9 @@ if server == "":
 if sleep_time == 0:
 	sleep_time = sleep_time_default
 
-print "Checking", server, "every", sleep_time, "secs", loops , "times"
+
+(stat, host) = commands.getstatusoutput('hostname')
+print "Host: ", host, "Server:", server, "every", sleep_time, "secs", loops , "times"
 
 
 #check specified server is the same as ntpdc server
