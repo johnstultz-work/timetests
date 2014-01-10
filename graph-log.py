@@ -62,7 +62,7 @@ fig = plt.figure()
 
 ax = fig.add_axes(rect1)
 
-ax.plot(x, act, 'g', label="actual offset")
+ax.plot(x, act, 'g', label="ntpdate offset")
 ax.plot(x, kern, 'b', label="kern offset")
 ax.plot(x, ntp, 'r', label="ntp offset")
 
