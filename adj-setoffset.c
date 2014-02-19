@@ -110,12 +110,14 @@ int main(int argc, char** argv)
 	/* Set the leap second insert flag */
 	tx.modes = ADJ_SETOFFSET | ADJ_NANO;
 
+	printf("Testing ADJ_SETOFFSET: ");
 	for (i=0; i < NUM_VALID; i++) {
 		tx.time.tv_sec = valid_vals[i].tv_sec;
 		tx.time.tv_usec = valid_vals[i].tv_nsec;
 
 		ret = adjtimex(&tx);
 		if (ret < 0 ) {
+			printf("FAIL\n");
 			printf("Error: adjtimex(ADJ_SETOFFSET, %ld:%ld)\n",
 				valid_vals[i].tv_sec,valid_vals[i].tv_nsec);
 			return -1;
@@ -127,10 +129,12 @@ int main(int argc, char** argv)
 		tx.time.tv_usec = invalid_vals[i].tv_nsec;
 		ret = adjtimex(&tx);
 		if (ret >= 0 ) {
+			printf("FAIL\n");
 			printf("Error: invalid adjtimex(ADJ_SETOFFSET, %ld:%ld)\n",
 				invalid_vals[i].tv_sec,invalid_vals[i].tv_nsec);
 			return -1;
 		}
 	}
+	printf("PASS\n");
 	return 0;
 }
