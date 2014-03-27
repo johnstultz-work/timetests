@@ -1,3 +1,4 @@
+dmesg -n 7
 make
 # correctness tests, observational only
 echo
