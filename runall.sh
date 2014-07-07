@@ -28,6 +28,11 @@ echo "======================="
 ./nsleep-lat
 
 echo
+echo "set_timer latency check:"
+echo "======================="
+./set-timer-lat
+
+echo
 echo "Mqueue latency check:"
 echo "======================="
 ./mqueue-lat
