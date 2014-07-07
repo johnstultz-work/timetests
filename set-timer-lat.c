@@ -6,7 +6,7 @@
  *   This test makes sure the set_timer api is correct
  *
  *  To build:
- *	$ gcc alarmtimer-suspend.c -o alarmtimer-suspend -lrt
+ *	$ gcc set-timer-lat.c -o set-timer-lat -lrt
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -100,33 +100,73 @@ void sigalarm(int signo)
 	delta_ns = timespec_sub(start_time, ts);
 	delta_ns -= NSEC_PER_SEC * TIMER_SECS * alarmcount;
 
+	if (delta_ns < 0)
+		printf("%s timer fired early: FAIL\n", clockstring(clock_id));
+
 	if (delta_ns > max_latency_ns)
 		max_latency_ns = delta_ns;
 }
 
-void main(void)
+void do_timer(int clock_id, int flags)
 {
-        struct timespec ts;
-        timer_t tm1;
-        struct itimerspec its1, its2;
-        struct sigevent se;
-        struct sigaction act;
-        sigset_t sigmask;
-        int signum = SIGRTMAX;
+	struct sigevent se;
+	timer_t tm1;
+	struct itimerspec its1, its2;
 	int err;
 
-        /* Set up signal handler: */
-        sigfillset(&act.sa_mask);
-        act.sa_flags = 0;
-        act.sa_handler = sigalarm;
-        sigaction(signum, &act, NULL);
+	/* Set up timer: */
+	memset(&se, 0, sizeof(se));
+	se.sigev_notify = SIGEV_SIGNAL;
+	se.sigev_signo = SIGRTMAX;
+	se.sigev_value.sival_int = 0;
 
-        /* Set up timer: */
-        memset(&se, 0, sizeof(se));
-        se.sigev_notify = SIGEV_SIGNAL;
-        se.sigev_signo = signum;
-        se.sigev_value.sival_int = 0;
+	max_latency_ns = 0;
+	alarmcount = 0;
 
+	err = timer_create(clock_id, &se, &tm1);
+	if (err) {
+		printf("%s - timer_create() failed\n", clockstring(clock_id));
+		return;
+	}
+
+	clock_gettime(clock_id, &start_time);
+	if (flags) {
+		its1.it_value = start_time;
+		its1.it_value.tv_sec += TIMER_SECS;
+	} else {
+		its1.it_value.tv_sec = TIMER_SECS;
+		its1.it_value.tv_nsec = 0;
+	}
+        its1.it_interval.tv_sec = TIMER_SECS;
+        its1.it_interval.tv_nsec = 0;
+
+	err = timer_settime(tm1, flags, &its1, &its2);
+	if (err) {
+		printf("%s - timer_settime() failed\n", clockstring(clock_id));
+		return;
+	}
+	while(alarmcount < 5)
+		sleep(1);
+
+	printf("%s %s max latency: %lld ns\n",
+			clockstring(clock_id), 
+			flags ? "ABSTIME":"RELTIME",
+			max_latency_ns);
+	timer_delete(tm1);
+}
+
+void main(void)
+{
+	struct timespec ts;
+	struct sigaction act;
+	sigset_t sigmask;
+	int signum = SIGRTMAX;
+
+	/* Set up signal handler: */
+	sigfillset(&act.sa_mask);
+	act.sa_flags = 0;
+	act.sa_handler = sigalarm;
+	sigaction(signum, &act, NULL);
 
 	printf("Setting timers for every %i seconds\n", TIMER_SECS);
 	for (clock_id = 0; clock_id < NR_CLOCKIDS; clock_id++) {
@@ -138,51 +178,9 @@ void main(void)
 				(clock_id == CLOCK_MONOTONIC_COARSE) ||
 				(clock_id == CLOCK_HWSPECIFIC))
 			continue;
-		max_latency_ns = 0;
-		alarmcount = 0;
 
-	        err = timer_create(clock_id, &se, &tm1);
-		if (err) {
-			printf("%s - timer_create() failed\n", clockstring(clock_id));
-			continue;
-		}
-
-        	clock_gettime(clock_id, &start_time);
-	        its1.it_value = start_time;
-		its1.it_value.tv_sec += TIMER_SECS;
-	        its1.it_interval.tv_sec = TIMER_SECS;
-	        its1.it_interval.tv_nsec = 0;
-
-	        err = timer_settime(tm1, TIMER_ABSTIME, &its1, &its2);
-		if (err) {
-			printf("%s - timer_settime() failed\n", clockstring(clock_id));
-			continue;
-		}
-	        while(alarmcount < 5)
-			sleep(1);
-
-		printf("%s ABSTIME max latency: %lld ns\n", clockstring(clock_id), 
-				max_latency_ns);
-
-		max_latency_ns= 0; 
-		alarmcount = 0;
-	       	clock_gettime(clock_id, &start_time);
-		its1.it_value.tv_sec = TIMER_SECS;
-		its1.it_value.tv_nsec = 0;
-
-		err = timer_settime(tm1, 0, &its1, &its2);
-		if (err) {
-			printf("%s - timer_settime() failed\n", clockstring(clock_id));
-			continue;
-		}
-	        while(alarmcount < 5)
-			sleep(1);
-
-		printf("%s RELTIME max latency: %lld ns\n", clockstring(clock_id), 
-				max_latency_ns);
-
-
-		timer_delete(tm1);
+		do_timer(clock_id, TIMER_ABSTIME);
+		do_timer(clock_id, 0);
 	}
 
 }
