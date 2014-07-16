@@ -79,9 +79,10 @@ char *clockstring(int clockid)
 /* returns 1 if a <= b, 0 otherwise */
 static inline int in_order(struct timespec a, struct timespec b)
 {
-	if(a.tv_sec < b.tv_sec)
+	/* use unsigned to avoid false positives on 2038 rollover */
+	if((unsigned long)a.tv_sec < (unsigned long)b.tv_sec)
 		return 1;
-	if(a.tv_sec > b.tv_sec)
+	if((unsigned long)a.tv_sec > (unsigned long)b.tv_sec)
 		return 0;
 	if(a.tv_nsec > b.tv_nsec)
 		return 0;

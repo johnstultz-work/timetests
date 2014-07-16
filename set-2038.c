@@ -26,6 +26,8 @@
 #include <time.h>
 #include <sys/time.h>
 
+extern char *optarg;
+
 #define NSEC_PER_SEC 1000000000LL
 
 #define KTIME_MAX	((long long)~((unsigned long long)1 << 63))
@@ -68,10 +70,20 @@ int do_tests(void)
 
 }
 
-int main(void)
+int main(int argc, char* argv[])
 {
 	int ret = 0;
+	int opt, dangerous = 0;
 	time_t start;
+
+
+	/* Process arguments */
+        while ((opt = getopt(argc, argv, "d"))!=-1) {
+                switch(opt) {
+                case 'd':
+                        dangerous = 1;
+		}
+	}
 
 	start = time(0);
 
@@ -98,16 +110,15 @@ int main(void)
 	if (do_tests())
 		goto out;
 
-	/* The rest of the tests are 64bit only */
-	if (is32bits())
+	/* The rest of the tests can blowup on 32bit systems */
+	if (is32bits() && !dangerous)
 		goto out;
-
-	settime(YEAR_2262-600);
+	/* Test rollover behavior 32bit edge */
+	settime(YEAR_2038-10);
 	if (do_tests())
 		goto out;
 
-	/* Test rollover behavior 32bit edge */
-	settime(YEAR_2038-10);
+	settime(YEAR_2262-600);
 	if (do_tests())
 		goto out;
 
