@@ -31,11 +31,11 @@ void clear_time_state(void)
 	int ret;
 
 	/*
-	 * XXX - The fact we have to call this twice seems
-	 * to point to a slight issue in the kernel's ntp state
-	 * managment. Needs to be investigated further.
+	 * We have to call adjtime twice here, as kernels
+	 * prior to 6b1859dba01c7 (included in 3.5 and
+	 * -stable), had an issue with the state machine
+	 * and wouldn't clear the STA_INS/DEL flag directly.
 	 */
-
 	tx.modes = ADJ_STATUS;
 	tx.status = STA_PLL;
 	ret = adjtimex(&tx);
