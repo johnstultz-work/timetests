@@ -1,6 +1,7 @@
 /* Demo leapsecond deadlock
- *              by: john stultz (johnstul@us.ibm.com)
+ *              by: John Stultz (john.stultz@linaro.org)
  *              (C) Copyright IBM 2012
+ *              (C) Copyright 2013, 2015 Linaro Limited
  *              Licensed under the GPL
  *
  * This test demonstrates leapsecond deadlock that is possibe

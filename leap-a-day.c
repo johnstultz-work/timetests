@@ -1,6 +1,7 @@
 /* Leap second stress test
- *              by: john stultz (johnstul@us.ibm.com)
+ *              by: John Stultz (john.stultz@linaro.org)
  *              (C) Copyright IBM 2012
+ *              (C) Copyright 2013, 2015 Linaro Limited
  *              Licensed under the GPLv2
  *
  *  This test signals the kernel to insert a leap second
