@@ -218,6 +218,7 @@ int main(int argc, char** argv)
 		}
 
 		/* Validate STA_INS was set */
+		tx.modes = 0;
 		ret = adjtimex(&tx);
 		if (tx.status != STA_INS && tx.status != STA_DEL) {
 			printf("Error: STA_INS/STA_DEL not set!: %s\n",
@@ -240,6 +241,7 @@ int main(int argc, char** argv)
 			printf("Something woke us up, returning to sleep\n");
 
 		/* Validate STA_INS is still set */
+		tx.modes = 0;
 		ret = adjtimex(&tx);
 		if (tx.status != STA_INS && tx.status != STA_DEL) {
 			printf("Something cleared STA_INS/STA_DEL, setting it again.\n");
@@ -256,8 +258,9 @@ int main(int argc, char** argv)
 		while (now < next_leap+2) {
 			char buf[26];
 			struct timespec tai;
-			ret = adjtimex(&tx);
 
+			tx.modes = 0;
+			ret = adjtimex(&tx);
 
 			if (tai_time) {
 				clock_gettime(CLOCK_TAI, &tai);
