@@ -75,7 +75,6 @@ struct timespec timespec_add(struct timespec ts, unsigned long long ns)
 	return ts;
 }
 
-
 char* time_state_str(int state)
 {
 	switch (state) {
@@ -117,9 +116,6 @@ void handler(int unused)
 	exit(0);
 }
 
-
-
-
 /* Test for known hrtimer failure */
 void test_hrtimer_failure(void)
 {
@@ -136,8 +132,6 @@ void test_hrtimer_failure(void)
 
 }
 
-
-
 int main(int argc, char** argv) 
 {
 	int settime = 0;
@@ -145,7 +139,6 @@ int main(int argc, char** argv)
 	int insert = 1;
 	int iterations = -1;
 	int opt;
-
 
 	/* Process arguments */
 	while ((opt = getopt(argc, argv, "sti:"))!=-1) {
@@ -193,14 +186,12 @@ int main(int argc, char** argv)
 		struct timex tx;
 		time_t now, next_leap;
 
-
 		/* Get the current time */
 		clock_gettime(CLOCK_REALTIME, &ts);
 
 		/* Calculate the next possible leap second 23:59:60 GMT */
 		next_leap = ts.tv_sec;
 		next_leap += 86400 - (next_leap % 86400);
-
 
 		if (settime) {
 			struct timeval tv;
@@ -234,15 +225,12 @@ int main(int argc, char** argv)
 			return -1;
 		}
 
-
 		if (tai_time) {
 			printf("Using TAI time,"
 				" no inconsistencies should be seen!\n");
 		}
 
 		printf("Scheduling leap second for %s", ctime(&next_leap));
-
-
 
 		/* Wake up 3 seconds before leap */
 		ts.tv_sec = next_leap - 3;
@@ -303,8 +291,6 @@ int main(int argc, char** argv)
 
 		if ((iterations != -1) && !(--iterations))
 			break;
-
-
 	}
 
 	clear_time_state();
