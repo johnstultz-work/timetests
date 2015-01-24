@@ -104,6 +104,12 @@ void clear_time_state(void)
 	tx.status = STA_PLL;
 	ret = adjtimex(&tx);
 
+	/* Clear maxerror, as it can cause UNSYNC to be set */
+	tx.modes = ADJ_MAXERROR;
+	tx.maxerror = 0;
+	ret = adjtimex(&tx);
+
+	/* Clear the status */
 	tx.modes = ADJ_STATUS;
 	tx.status = 0;
 	ret = adjtimex(&tx);
