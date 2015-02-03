@@ -39,7 +39,11 @@ int change_skew_test(int ppm)
 	tx.modes = ADJ_FREQUENCY;
 	tx.freq = ppm << 16;
 
-	adjtimex(&tx);
+	ret = adjtimex(&tx);
+	if (ret < 0) {
+		printf("Error adjusting freq\n");
+		return ret;
+	}
 
 	ret = system("./raw_skew");
 	ret |= system("./inconsistency-check");
