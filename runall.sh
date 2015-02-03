@@ -45,6 +45,11 @@ echo "========================="
 
 # "destructive tests" that may change the date, insert leapseconds, etc
 echo
+echo "Adjtimex basic validation tests:"
+echo "================================"
+./valid-adjtimex
+
+echo
 echo "Adjtimex freq adjustment tests:"
 echo "==============================="
 ./change_skew
