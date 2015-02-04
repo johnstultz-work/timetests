@@ -1,5 +1,12 @@
 dmesg -n 7
 make
+
+#disable ntpd during the run, as it can trigger failures
+echo
+echo "Killing ntpd:"
+echo "============"
+killall -9 ntpd
+
 # correctness tests, observational only
 echo
 echo "Consistency check:"
