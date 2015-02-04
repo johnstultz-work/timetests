@@ -51,10 +51,29 @@ int set_fixed_offset(long long nsec)
 {
 	struct timex tx;
 	int ret;
+	int neg = 0;
+
+	if (nsec < 0) {
+		neg = 1;
+		nsec = -nsec;
+	}
 
 	tx.modes = ADJ_SETOFFSET;
 	tx.time.tv_sec = nsec/NSEC_PER_SEC;
 	tx.time.tv_usec = (nsec%NSEC_PER_SEC)/1000;
+
+	/*
+	 * negative timespecs are strange, as the tv_nsec
+	 * portion  must always be positive. So subtract it
+	 * from NSEC_PER_SEC and drop one from the tv_sec.
+	 */
+	if (neg) {
+		tx.time.tv_sec = -tx.time.tv_sec;
+		if (tx.time.tv_usec) {
+			tx.time.tv_usec = NSEC_PER_SEC - tx.time.tv_usec;
+			tx.time.tv_sec--;
+		}
+	}
 
 	ret = adjtimex(&tx);
 
