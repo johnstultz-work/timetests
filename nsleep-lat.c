@@ -151,7 +151,7 @@ int main(int argc, char** argv)
 				clockid == CLOCK_HWSPECIFIC)
 			continue;
 
-		printf("Nanosleep %-31s: ", clockstring(clockid));
+		printf("nsleep latency %-31s: ", clockstring(clockid));
 
 		length = 10;
 		while (length <= (NSEC_PER_SEC * 10)) {
