@@ -101,7 +101,7 @@ int consistency_test(int clock_type, unsigned long seconds)
 
 	clock_gettime(clock_type, &list[0]);
 	now = then = list[0].tv_sec;
-	
+
 	/* timestamp start of test */
 	t = time(0);
 	start_str = ctime(&t);
@@ -112,7 +112,7 @@ int consistency_test(int clock_type, unsigned long seconds)
 		/* Fill list */
 		for(i=0; i < CALLS_PER_LOOP; i++)
 			clock_gettime(clock_type, &list[i]);
-		
+
 		/* Check for inconsistencies */
 		for(i=0; i < CALLS_PER_LOOP-1; i++)
 			if(!in_order(list[i],list[i+1]))

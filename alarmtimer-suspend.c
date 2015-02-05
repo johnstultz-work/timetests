@@ -136,8 +136,8 @@ void main(void)
 		alarmcount = 0;
 	        timer_create(alarm_clock_id, &se, &tm1);
 
-        	clock_gettime(alarm_clock_id, &start_time);
-	        printf("Start time (%s): %ld:%ld\n", clockstring(alarm_clock_id), 
+		clock_gettime(alarm_clock_id, &start_time);
+	        printf("Start time (%s): %ld:%ld\n", clockstring(alarm_clock_id),
 				start_time.tv_sec, start_time.tv_nsec);
 		printf("Setting alarm for every %i seconds\n", SUSPEND_SECS);
 	        its1.it_value = start_time;

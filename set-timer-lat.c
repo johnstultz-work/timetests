@@ -45,7 +45,7 @@
 
 #define NSEC_PER_SEC 1000000000ULL
 
-#define TIMER_SECS 3 
+#define TIMER_SECS 3
 int alarmcount;
 int clock_id;
 struct timespec start_time;
@@ -149,7 +149,7 @@ void do_timer(int clock_id, int flags)
 		sleep(1);
 
 	printf("%s %s max latency: %lld ns\n",
-			clockstring(clock_id), 
+			clockstring(clock_id),
 			flags ? "ABSTIME":"RELTIME",
 			max_latency_ns);
 	timer_delete(tm1);
@@ -172,7 +172,7 @@ void main(void)
 	for (clock_id = 0; clock_id < NR_CLOCKIDS; clock_id++) {
 
 		if ((clock_id == CLOCK_PROCESS_CPUTIME_ID) ||
-				(clock_id == CLOCK_THREAD_CPUTIME_ID) || 
+				(clock_id == CLOCK_THREAD_CPUTIME_ID) ||
 				(clock_id == CLOCK_MONOTONIC_RAW) ||
 				(clock_id == CLOCK_REALTIME_COARSE) ||
 				(clock_id == CLOCK_MONOTONIC_COARSE) ||

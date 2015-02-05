@@ -99,7 +99,7 @@ struct timespec invalid_vals[NUM_INVALID] = {
 };
 
 
-int main(int argc, char** argv) 
+int main(int argc, char** argv)
 {
 	struct timex tx;
 	int ret;

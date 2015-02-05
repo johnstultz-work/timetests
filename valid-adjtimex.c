@@ -170,7 +170,7 @@ int validate_freq(void)
 }
 
 
-int main(int argc, char** argv) 
+int main(int argc, char** argv)
 {
 	return validate_freq();
 }

@@ -44,7 +44,7 @@ int get_tai(void)
 	return tx.tai;
 }
 
-int main(int argc, char** argv) 
+int main(int argc, char** argv)
 {
 	int i, ret;
 

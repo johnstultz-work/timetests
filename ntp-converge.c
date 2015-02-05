@@ -210,7 +210,7 @@ int main(int argc, char** argv)
 			break;
 		case 'r':
 			runtime = atoi(optarg);
-			break;		
+			break;
 		default:
 			printf("Usage: %s [-s <server>] [-o <offset>]\n", argv[0]);
 			printf("	-s <server>: Use <server> for convergence test \n");

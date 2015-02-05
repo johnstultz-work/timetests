@@ -85,7 +85,7 @@ char* time_state_str(int state)
 		case TIME_WAIT:	return "TIME_WAIT";
 		case TIME_BAD:	return "TIME_BAD";
 	}
-	return "ERROR"; 
+	return "ERROR";
 }
 
 /* clear NTP time_status & time_state */
@@ -138,7 +138,7 @@ void test_hrtimer_failure(void)
 
 }
 
-int main(int argc, char** argv) 
+int main(int argc, char** argv)
 {
 	int settime = 0;
 	int tai_time = 0;
@@ -212,7 +212,7 @@ int main(int argc, char** argv)
 
 		/* Set the leap second insert flag */
 		tx.modes = ADJ_STATUS;
-		if (insert) 
+		if (insert)
 			tx.status = STA_INS;
 		else
 			tx.status = STA_DEL;
@@ -252,7 +252,7 @@ int main(int argc, char** argv)
 		if (tx.status != STA_INS && tx.status != STA_DEL) {
 			printf("Something cleared STA_INS/STA_DEL, setting it again.\n");
 			tx.modes = ADJ_STATUS;
-			if (insert) 
+			if (insert)
 				tx.status = STA_INS;
 			else
 				tx.status = STA_DEL;
@@ -288,7 +288,7 @@ int main(int argc, char** argv)
 			/* Sleep for another half second */
 			ts.tv_sec = 0;
 			ts.tv_nsec = NSEC_PER_SEC/2;
-			clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);			
+			clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
 		}
 		/* Switch to using other mode */
 		insert = !insert;

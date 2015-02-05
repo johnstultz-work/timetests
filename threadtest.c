@@ -1,4 +1,4 @@
-/* threadtest.c 
+/* threadtest.c
  *		by: john stultz (johnstul@us.ibm.com)
  *		(C) Copyright IBM 2004, 2005, 2006, 2012
  *		Licensed under the GPLv2
@@ -47,7 +47,7 @@ void checklist(struct timespec* list, int size)
 	for(i=0; i < size-1; i++){
 		a = &list[i];
 		b = &list[i+1];
-		
+
 		/* look for any time inconsistencies */
 		if((b->tv_sec <= a->tv_sec)&&
 			(b->tv_nsec < a->tv_nsec)){
@@ -76,28 +76,28 @@ void checklist(struct timespec* list, int size)
 
 /* The shared thread shares a global list
  * that each thread fills while holding the lock.
- * This stresses clock syncronization across cpus. 
+ * This stresses clock syncronization across cpus.
  */
 void* shared_thread(void* arg)
 {
 	while(!done){
 		/* protect the list */
 		pthread_mutex_lock(&list_lock);
-		
+
 		/* see if we're ready to check the list */
 		if(listcount >= LISTSIZE){
 			checklist(global_list, LISTSIZE);
 			listcount = 0;
 		}
 		clock_gettime(CLOCK_MONOTONIC, &global_list[listcount++]);
-				
+
 		pthread_mutex_unlock(&list_lock);
 	}
 }
 
 
 /* Each independent thread fills in its own
- * list. This stresses clock_gettime() lock contention. 
+ * list. This stresses clock_gettime() lock contention.
  */
 void* independent_thread(void* arg)
 {
@@ -123,7 +123,7 @@ int main(int argc, char** argv)
 	void* tret;
 	int ret = 0;
 	void* (*thread)(void*) = shared_thread;
-	
+
 
 	/* Process arguments */
 	while ((opt = getopt(argc, argv, "t:n:i"))!=-1) {
@@ -149,18 +149,18 @@ int main(int argc, char** argv)
 
 	if(thread_count > MAX_THREADS)
 		thread_count = MAX_THREADS;
-	
+
 
 	setbuf(stdout, NULL);
 
-	start = time(0);	
+	start = time(0);
 	system("date");
 	printf("Testing consistency with %i threads for %ld seconds: ", thread_count,runtime);
 
 	/* spawn */
 	for(i=0; i < thread_count; i++)
 		pthread_create(&pth[i], 0, thread, 0);
-	
+
 	while (time(0) < start + runtime) {
 		sleep(1);
 		if (done) {

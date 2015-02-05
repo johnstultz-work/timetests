@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# drift-log.py 
+# drift-log.py
 #    (C) Copyright IBM 2005
 #    by John Stultz johnstul@us.ibm.com
 #
@@ -24,7 +24,7 @@ import time
 def ntpdate_offset(ntpdate_cmd, server):
 	#get actual offset
 	(stat, cmd) = commands.getstatusoutput(ntpdate_cmd + ' -uq ' + server)
-	
+
 	if (stat != 0):
 		print "Bad ntpdate output:", cmd
 		sys.exit(-1)
@@ -44,7 +44,7 @@ def ntpdate_set(ntpdate_cmd, server):
 def ntpdc_sysinfo_server(ntpdc_cmd):
 	(stat, cmd) = commands.getstatusoutput(ntpdc_cmd + ' -c sysinfo')
 	line = string.split(cmd)
-	
+
 	server = ""
 	if len(line) != 4:
 		server = line[2]
@@ -103,8 +103,6 @@ def find_cmd(possibilities):
 			return path
 	print "Cannot fine command: ", possibilities
 	sys.exit(1)
-	
-
 
 
 
@@ -152,21 +150,21 @@ print "Host: ", host, "Server:", server, "every", sleep_time, "secs", loops , "t
 ip1 = string.split(commands.getoutput('host ' + server))
 ip2 = string.split(commands.getoutput('host ' + ntpdc_server))
 if ip1[-1] != ip2[-1]:
-	print "Warning: specified server", server, 
+	print "Warning: specified server", server,
 	print "is not the current NTP server", ntpdc_server
 
 # set the time
 if set_time == 1:
 	ntpdate_settime(ntpdate_cmd, server)
-		
-	
+
+
 #start logging
 print "key: date, secs, actual offset, kernel offset, ntp offset, ntp drift, ntp status"
 print "================================================================================"
 
 i = 0
 while 1:
-	
+
 	#get time right now
 	now_time = time.time()
 	datestr = time.strftime("%d %b %Y %H:%M:%S", time.localtime(now_time))
@@ -174,7 +172,7 @@ while 1:
 
 	print ntpdate_offset(ntpdate_cmd, server), ",",
 
-	print ntpdc_kerninfo_offset(ntpdc_cmd), ",", 
+	print ntpdc_kerninfo_offset(ntpdc_cmd), ",",
 
 	print ntpdc_peers_offset(ntpdc_cmd), ",",
 
@@ -183,7 +181,7 @@ while 1:
 	print ntpdc_kerninfo_status(ntpdc_cmd)
 
 	sys.stdout.flush()
-	
+
 	i = i + 1
 	if (loops == -1):
 		i = 0
