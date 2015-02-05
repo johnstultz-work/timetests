@@ -32,8 +32,8 @@
 
 #define NSEC_PER_SEC 1000000000ULL
 
-#define TARGET_TIMEOUT 		100000000	/* 100ms in nanoseconds */
-#define UNRESONABLE_LATENCY 	40000000 	/* 40ms in nanosecs */
+#define TARGET_TIMEOUT		100000000	/* 100ms in nanoseconds */
+#define UNRESONABLE_LATENCY	40000000	/* 40ms in nanosecs */
 
 
 long long timespec_sub(struct timespec a, struct timespec b)
@@ -86,7 +86,7 @@ int mqueue_lat_test(void)
 		}
 	}
 	clock_gettime(CLOCK_MONOTONIC, &end);
-	
+
 	mq_close(q);
 
 	if ((timespec_sub(start, end)/count) > TARGET_TIMEOUT + UNRESONABLE_LATENCY)
