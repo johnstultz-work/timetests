@@ -60,7 +60,7 @@ int set_fixed_offset(long long nsec)
 
 	tx.modes = ADJ_SETOFFSET;
 	tx.time.tv_sec = nsec/NSEC_PER_SEC;
-	tx.time.tv_usec = (nsec%NSEC_PER_SEC)/1000;
+	tx.time.tv_usec = nsec%NSEC_PER_SEC;
 
 	/*
 	 * negative timespecs are strange, as the tv_nsec
@@ -75,6 +75,8 @@ int set_fixed_offset(long long nsec)
 		}
 	}
 
+	/* we're not using ADJ_NANO, so convert to usecs */
+	tx.time.tv_usec /= 1000;
 	ret = adjtimex(&tx);
 
 	return ret;
