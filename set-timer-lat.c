@@ -44,6 +44,7 @@
 
 
 #define NSEC_PER_SEC 1000000000ULL
+#define UNRESONABLE_LATENCY 40000000 /* 40ms in nanosecs */
 
 #define TIMER_SECS 3
 int alarmcount;
@@ -148,10 +149,16 @@ void do_timer(int clock_id, int flags)
 	while(alarmcount < 5)
 		sleep(1);
 
-	printf("%s %s max latency: %lld ns\n",
+	printf("%-22s %s max latency: %10lld ns : ",
 			clockstring(clock_id),
 			flags ? "ABSTIME":"RELTIME",
 			max_latency_ns);
+
+	if (max_latency_ns < UNRESONABLE_LATENCY)
+		printf("PASS\n");
+	else
+		printf("WARNING\n");
+
 	timer_delete(tm1);
 }
 
