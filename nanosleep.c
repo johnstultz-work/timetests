@@ -2,7 +2,7 @@
  *              by: john stultz (johnstul@us.ibm.com)
  *		    John Stultz (john.stultz@linaro.org)
  *              (C) Copyright IBM 2012
- *              (C) Copyright Linaro 2013
+ *              (C) Copyright Linaro 2013 2015
  *              Licensed under the GPLv2
  *
  *  To build:
@@ -26,6 +26,18 @@
 #include <sys/timex.h>
 #include <string.h>
 #include <signal.h>
+#ifdef KTEST
+#include "../kselftest.h"
+#else
+static inline int ksft_exit_pass(void)
+{
+	exit(0);
+}
+static inline int ksft_exit_fail(void)
+{
+	exit(1);
+}
+#endif
 
 #define NSEC_PER_SEC 1000000000ULL
 
@@ -77,19 +89,19 @@ char *clockstring(int clockid)
 /* returns 1 if a <= b, 0 otherwise */
 static inline int in_order(struct timespec a, struct timespec b)
 {
-        if(a.tv_sec < b.tv_sec)
-                return 1;
-        if(a.tv_sec > b.tv_sec)
-                return 0;
-        if(a.tv_nsec > b.tv_nsec)
-                return 0;
-        return 1;
+	if (a.tv_sec < b.tv_sec)
+		return 1;
+	if (a.tv_sec > b.tv_sec)
+		return 0;
+	if (a.tv_nsec > b.tv_nsec)
+		return 0;
+	return 1;
 }
 
 struct timespec timespec_add(struct timespec ts, unsigned long long ns)
 {
 	ts.tv_nsec += ns;
-	while(ts.tv_nsec >= NSEC_PER_SEC) {
+	while (ts.tv_nsec >= NSEC_PER_SEC) {
 		ts.tv_nsec -= NSEC_PER_SEC;
 		ts.tv_sec++;
 	}
@@ -126,10 +138,11 @@ int nanosleep_test(int clockid, long long ns)
 	return 0;
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
 	long long length;
-	int failed = 0, clockid, ret;
+	int clockid, ret;
+
 	for (clockid = CLOCK_REALTIME; clockid < NR_CLOCKIDS; clockid++) {
 
 		/* Skip cputime clockids since nanosleep won't increment cputime */
@@ -138,24 +151,24 @@ int main(int argc, char** argv)
 				clockid == CLOCK_HWSPECIFIC)
 			continue;
 
-		printf("Nanosleep %-31s: ", clockstring(clockid));
+		printf("Nanosleep %-31s ", clockstring(clockid));
 
 		length = 10;
 		while (length <= (NSEC_PER_SEC * 10)) {
 			ret = nanosleep_test(clockid, length);
 			if (ret == UNSUPPORTED) {
-				printf("UNSUPPORTED\n");
+				printf("[UNSUPPORTED]\n");
 				goto next;
 			}
 			if (ret < 0) {
-				printf("FAILED\n");
-				return -1;
+				printf("[FAILED]\n");
+				return ksft_exit_fail();
 			}
 			length *= 100;
 		}
-		printf("PASSED\n");
+		printf("[OK]\n");
 next:
 		ret = 0;
 	}
-	return 0;
+	return ksft_exit_pass();
 }

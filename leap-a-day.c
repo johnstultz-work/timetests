@@ -21,7 +21,7 @@
  *	-i:	Number of iterations to run (default: infinite)
  *
  *  Other notes: Disabling NTP prior to running this is advised, as the two
- *		 may conflict in thier commands to the kernel.
+ *		 may conflict in their commands to the kernel.
  *
  *  To build:
  *	$ gcc leap-a-day.c -o leap-a-day -lrt
@@ -47,8 +47,18 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
-
-extern char *optarg;
+#ifdef KTEST
+#include "../kselftest.h"
+#else
+static inline int ksft_exit_pass(void)
+{
+	exit(0);
+}
+static inline int ksft_exit_fail(void)
+{
+	exit(1);
+}
+#endif
 
 #define NSEC_PER_SEC 1000000000ULL
 #define CLOCK_TAI 11
@@ -56,40 +66,40 @@ extern char *optarg;
 /* returns 1 if a <= b, 0 otherwise */
 static inline int in_order(struct timespec a, struct timespec b)
 {
-        if(a.tv_sec < b.tv_sec)
-                return 1;
-        if(a.tv_sec > b.tv_sec)
-                return 0;
-        if(a.tv_nsec > b.tv_nsec)
-                return 0;
-        return 1;
+	if (a.tv_sec < b.tv_sec)
+		return 1;
+	if (a.tv_sec > b.tv_sec)
+		return 0;
+	if (a.tv_nsec > b.tv_nsec)
+		return 0;
+	return 1;
 }
 
 struct timespec timespec_add(struct timespec ts, unsigned long long ns)
 {
 	ts.tv_nsec += ns;
-	while(ts.tv_nsec >= NSEC_PER_SEC) {
+	while (ts.tv_nsec >= NSEC_PER_SEC) {
 		ts.tv_nsec -= NSEC_PER_SEC;
 		ts.tv_sec++;
 	}
 	return ts;
 }
 
-char* time_state_str(int state)
+char *time_state_str(int state)
 {
 	switch (state) {
-		case TIME_OK:	return "TIME_OK";
-		case TIME_INS:	return "TIME_INS";
-		case TIME_DEL:	return "TIME_DEL";
-		case TIME_OOP:	return "TIME_OOP";
-		case TIME_WAIT:	return "TIME_WAIT";
-		case TIME_BAD:	return "TIME_BAD";
+	case TIME_OK:	return "TIME_OK";
+	case TIME_INS:	return "TIME_INS";
+	case TIME_DEL:	return "TIME_DEL";
+	case TIME_OOP:	return "TIME_OOP";
+	case TIME_WAIT:	return "TIME_WAIT";
+	case TIME_BAD:	return "TIME_BAD";
 	}
 	return "ERROR";
 }
 
 /* clear NTP time_status & time_state */
-void clear_time_state(void)
+int clear_time_state(void)
 {
 	struct timex tx;
 	int ret;
@@ -113,6 +123,8 @@ void clear_time_state(void)
 	tx.modes = ADJ_STATUS;
 	tx.status = 0;
 	ret = adjtimex(&tx);
+
+	return ret;
 }
 
 /* Make sure we cleanup on ctrl-c */
@@ -132,13 +144,11 @@ void test_hrtimer_failure(void)
 	clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &target, NULL);
 	clock_gettime(CLOCK_REALTIME, &now);
 
-	if (!in_order(target, now)) {
+	if (!in_order(target, now))
 		printf("ERROR: hrtimer early expiration failure observed.\n");
-	}
-
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
 	int settime = 0;
 	int tai_time = 0;
@@ -147,8 +157,8 @@ int main(int argc, char** argv)
 	int opt;
 
 	/* Process arguments */
-	while ((opt = getopt(argc, argv, "sti:"))!=-1) {
-		switch(opt) {
+	while ((opt = getopt(argc, argv, "sti:")) != -1) {
+		switch (opt) {
 		case 's':
 			printf("Setting time to speed up testing\n");
 			settime = 1;
@@ -171,9 +181,10 @@ int main(int argc, char** argv)
 	/* Make sure TAI support is present if -t was used */
 	if (tai_time) {
 		struct timespec ts;
+
 		if (clock_gettime(CLOCK_TAI, &ts)) {
 			printf("System doesn't support CLOCK_TAI\n");
-			exit(-1);
+			ksft_exit_fail();
 		}
 	}
 
@@ -201,6 +212,7 @@ int main(int argc, char** argv)
 
 		if (settime) {
 			struct timeval tv;
+
 			tv.tv_sec = next_leap - 10;
 			tv.tv_usec = 0;
 			settimeofday(&tv, NULL);
@@ -217,10 +229,10 @@ int main(int argc, char** argv)
 		else
 			tx.status = STA_DEL;
 		ret = adjtimex(&tx);
-		if (ret < 0 ) {
+		if (ret < 0) {
 			printf("Error: Problem setting STA_INS/STA_DEL!: %s\n",
 							time_state_str(ret));
-			return -1;
+			return ksft_exit_fail();
 		}
 
 		/* Validate STA_INS was set */
@@ -229,7 +241,7 @@ int main(int argc, char** argv)
 		if (tx.status != STA_INS && tx.status != STA_DEL) {
 			printf("Error: STA_INS/STA_DEL not set!: %s\n",
 							time_state_str(ret));
-			return -1;
+			return ksft_exit_fail();
 		}
 
 		if (tai_time) {
@@ -243,7 +255,7 @@ int main(int argc, char** argv)
 		ts.tv_sec = next_leap - 3;
 		ts.tv_nsec = 0;
 
-		while(clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &ts, NULL))
+		while (clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &ts, NULL))
 			printf("Something woke us up, returning to sleep\n");
 
 		/* Validate STA_INS is still set */
@@ -261,7 +273,7 @@ int main(int argc, char** argv)
 
 		/* Check adjtimex output every half second */
 		now = tx.time.tv_sec;
-		while (now < next_leap+2) {
+		while (now < next_leap + 2) {
 			char buf[26];
 			struct timespec tai;
 
@@ -287,7 +299,7 @@ int main(int argc, char** argv)
 			now = tx.time.tv_sec;
 			/* Sleep for another half second */
 			ts.tv_sec = 0;
-			ts.tv_nsec = NSEC_PER_SEC/2;
+			ts.tv_nsec = NSEC_PER_SEC / 2;
 			clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
 		}
 		/* Switch to using other mode */
@@ -303,5 +315,5 @@ int main(int argc, char** argv)
 	}
 
 	clear_time_state();
-	return 0;
+	return ksft_exit_pass();
 }

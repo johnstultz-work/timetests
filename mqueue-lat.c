@@ -29,6 +29,18 @@
 #include <signal.h>
 #include <errno.h>
 #include <mqueue.h>
+#ifdef KTEST
+#include "../kselftest.h"
+#else
+static inline int ksft_exit_pass(void)
+{
+	exit(0);
+}
+static inline int ksft_exit_fail(void)
+{
+	exit(1);
+}
+#endif
 
 #define NSEC_PER_SEC 1000000000ULL
 
@@ -39,6 +51,7 @@
 long long timespec_sub(struct timespec a, struct timespec b)
 {
 	long long ret = NSEC_PER_SEC * b.tv_sec + b.tv_nsec;
+
 	ret -= NSEC_PER_SEC * a.tv_sec + a.tv_nsec;
 	return ret;
 }
@@ -46,7 +59,7 @@ long long timespec_sub(struct timespec a, struct timespec b)
 struct timespec timespec_add(struct timespec ts, unsigned long long ns)
 {
 	ts.tv_nsec += ns;
-	while(ts.tv_nsec >= NSEC_PER_SEC) {
+	while (ts.tv_nsec >= NSEC_PER_SEC) {
 		ts.tv_nsec -= NSEC_PER_SEC;
 		ts.tv_sec++;
 	}
@@ -75,7 +88,7 @@ int mqueue_lat_test(void)
 	for (i = 0; i < count; i++) {
 		char buf[attr.mq_msgsize];
 
-		clock_gettime(CLOCK_REALTIME,&now);
+		clock_gettime(CLOCK_REALTIME, &now);
 		target = now;
 		target = timespec_add(now, TARGET_TIMEOUT); /* 100ms */
 
@@ -95,18 +108,17 @@ int mqueue_lat_test(void)
 	return 0;
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
-	long long length;
-	int failed = 0, clockid, ret;
+	int ret;
 
-	printf("Mqueue latency : ");
+	printf("Mqueue latency :                          ");
 
 	ret = mqueue_lat_test();
 	if (ret < 0) {
-		printf("FAILED\n");
-		return -1;
+		printf("[FAILED]\n");
+		return ksft_exit_fail();
 	}
-	printf("PASSED\n");
-	return 0;
+	printf("[OK]\n");
+	return ksft_exit_pass();
 }

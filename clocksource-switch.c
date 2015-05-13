@@ -24,6 +24,8 @@
 
 
 #include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <sys/time.h>
 #include <sys/timex.h>
 #include <time.h>
@@ -32,11 +34,23 @@
 #include <fcntl.h>
 #include <string.h>
 #include <sys/wait.h>
+#ifdef KTEST
+#include "../kselftest.h"
+#else
+static inline int ksft_exit_pass(void)
+{
+	exit(0);
+}
+static inline int ksft_exit_fail(void)
+{
+	exit(1);
+}
+#endif
 
 
 int get_clocksources(char list[][30])
 {
-	int fd, i, count;
+	int fd, i;
 	size_t size;
 	char buf[512];
 	char *head, *tmp;
@@ -47,13 +61,12 @@ int get_clocksources(char list[][30])
 
 	close(fd);
 
-	for (i=0;i<30;i++) {
+	for (i = 0; i < 30; i++)
 		list[i][0] = '\0';
-	}
 
 	head = buf;
-	i=0;
-	while(head - buf < size) {
+	i = 0;
+	while (head - buf < size) {
 		/* Find the next space */
 		for (tmp = head; *tmp != ' '; tmp++) {
 			if (*tmp == '\n')
@@ -63,7 +76,7 @@ int get_clocksources(char list[][30])
 		}
 		*tmp = '\0';
 		strcpy(list[i], head);
-		head = tmp +1;
+		head = tmp + 1;
 		i++;
 	}
 
@@ -72,22 +85,19 @@ int get_clocksources(char list[][30])
 
 int get_cur_clocksource(char *buf, size_t size)
 {
-	int fd, i, count;
-	char *head, *tmp;
+	int fd;
 
 	fd = open("/sys/devices/system/clocksource/clocksource0/current_clocksource", O_RDONLY);
 
-	size = read(fd, buf,size);
+	size = read(fd, buf, size);
 
 	return 0;
 }
 
 int change_clocksource(char *clocksource)
 {
-	int fd, ret, count;
+	int fd;
 	size_t size;
-	char buf[512];
-	char *head, *tmp;
 
 	fd = open("/sys/devices/system/clocksource/clocksource0/current_clocksource", O_WRONLY);
 
@@ -120,11 +130,11 @@ int run_tests(int secs)
 
 char clocksource_list[10][30];
 
-int main(int argv, char** argc)
+int main(int argv, char **argc)
 {
 	char orig_clk[512];
 	int count, i, status;
-	pid_t pid, w;
+	pid_t pid;
 
 	get_cur_clocksource(orig_clk, 512);
 
@@ -136,7 +146,7 @@ int main(int argv, char** argc)
 	}
 
 	/* Check everything is sane before we start switching asyncrhonously */
-	for(i=0;i<count; i++) {
+	for (i = 0; i < count; i++) {
 		printf("Validating clocksource %s\n", clocksource_list[i]);
 		if (change_clocksource(clocksource_list[i])) {
 			status = -1;
@@ -154,13 +164,16 @@ int main(int argv, char** argc)
 	if (!pid)
 		return run_tests(60);
 
-	while(pid != waitpid(pid, &status, WNOHANG))
-		for(i=0;i<count; i++)
+	while (pid != waitpid(pid, &status, WNOHANG))
+		for (i = 0; i < count; i++)
 			if (change_clocksource(clocksource_list[i])) {
 				status = -1;
 				goto out;
 			}
 out:
 	change_clocksource(orig_clk);
-	return status;
+
+	if (status)
+		return ksft_exit_fail();
+	return ksft_exit_pass();
 }

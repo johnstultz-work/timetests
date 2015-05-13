@@ -24,9 +24,22 @@
 
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/time.h>
 #include <sys/timex.h>
 #include <time.h>
+#ifdef KTEST
+#include "../kselftest.h"
+#else
+static inline int ksft_exit_pass(void)
+{
+	exit(0);
+}
+static inline int ksft_exit_fail(void)
+{
+	exit(1);
+}
+#endif
 
 #define NSEC_PER_SEC 1000000000LL
 
@@ -53,15 +66,15 @@ int change_skew_test(int ppm)
 }
 
 
-int main(int argv, char** argc)
+int main(int argv, char **argc)
 {
 	struct timex tx;
 	int i, ret;
 
-	int ppm[5] = {0,250,500,-250,-500};
+	int ppm[5] = {0, 250, 500, -250, -500};
 
 	/* Kill ntpd */
-	system("killall -9 ntpd");
+	ret = system("killall -9 ntpd");
 
 	/* Make sure there's no offset adjustment going on */
 	tx.modes = ADJ_OFFSET;
@@ -73,7 +86,7 @@ int main(int argv, char** argc)
 		return -1;
 	}
 
-	for (i=0; i < 5; i++) {
+	for (i = 0; i < 5; i++) {
 		printf("Using %i ppm adjustment\n", ppm[i]);
 		ret = change_skew_test(ppm[i]);
 		if (ret)
@@ -85,9 +98,10 @@ int main(int argv, char** argc)
 	tx.offset = 0;
 	adjtimex(&tx);
 
-	if (ret)
-		printf("FAILED");
-	else
-		printf("PASSED");
-	return ret;
+	if (ret) {
+		printf("[FAIL]");
+		return ksft_exit_fail();
+	}
+	printf("[OK]");
+	return ksft_exit_pass();
 }

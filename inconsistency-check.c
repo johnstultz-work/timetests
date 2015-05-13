@@ -1,6 +1,7 @@
 /* Time inconsistency check test
  *		by: john stultz (johnstul@us.ibm.com)
  *		(C) Copyright IBM 2003, 2004, 2005, 2012
+ *		(C) Copyright Linaro Limited 2015
  *		Licensed under the GPLv2
  *
  *  To build:
@@ -20,15 +21,25 @@
 
 
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
 #include <sys/timex.h>
 #include <string.h>
 #include <signal.h>
-
-extern char *optarg;
-
+#ifdef KTEST
+#include "../kselftest.h"
+#else
+static inline int ksft_exit_pass(void)
+{
+	exit(0);
+}
+static inline int ksft_exit_fail(void)
+{
+	exit(1);
+}
+#endif
 
 #define CALLS_PER_LOOP 64
 #define NSEC_PER_SEC 1000000000ULL
@@ -80,11 +91,11 @@ char *clockstring(int clockid)
 static inline int in_order(struct timespec a, struct timespec b)
 {
 	/* use unsigned to avoid false positives on 2038 rollover */
-	if((unsigned long)a.tv_sec < (unsigned long)b.tv_sec)
+	if ((unsigned long)a.tv_sec < (unsigned long)b.tv_sec)
 		return 1;
-	if((unsigned long)a.tv_sec > (unsigned long)b.tv_sec)
+	if ((unsigned long)a.tv_sec > (unsigned long)b.tv_sec)
 		return 0;
-	if(a.tv_nsec > b.tv_nsec)
+	if (a.tv_nsec > b.tv_nsec)
 		return 0;
 	return 1;
 }
@@ -106,64 +117,67 @@ int consistency_test(int clock_type, unsigned long seconds)
 	t = time(0);
 	start_str = ctime(&t);
 
-	while(seconds == -1 || now - then < seconds){
+	while (seconds == -1 || now - then < seconds) {
 		inconsistent = 0;
 
 		/* Fill list */
-		for(i=0; i < CALLS_PER_LOOP; i++)
+		for (i = 0; i < CALLS_PER_LOOP; i++)
 			clock_gettime(clock_type, &list[i]);
 
 		/* Check for inconsistencies */
-		for(i=0; i < CALLS_PER_LOOP-1; i++)
-			if(!in_order(list[i],list[i+1]))
+		for (i = 0; i < CALLS_PER_LOOP - 1; i++)
+			if (!in_order(list[i], list[i+1]))
 				inconsistent = i;
 
 		/* display inconsistency */
-		if(inconsistent){
+		if (inconsistent) {
 			unsigned long long delta;
+
 			printf("\%s\n", start_str);
-			for(i=0; i < CALLS_PER_LOOP; i++){
-				if(i == inconsistent)
+			for (i = 0; i < CALLS_PER_LOOP; i++) {
+				if (i == inconsistent)
 					printf("--------------------\n");
-				printf("%lu:%lu\n",list[i].tv_sec,
+				printf("%lu:%lu\n", list[i].tv_sec,
 							list[i].tv_nsec);
-				if(i == inconsistent + 1 )
+				if (i == inconsistent + 1)
 					printf("--------------------\n");
 			}
-			delta = list[inconsistent].tv_sec*NSEC_PER_SEC;
+			delta = list[inconsistent].tv_sec * NSEC_PER_SEC;
 			delta += list[inconsistent].tv_nsec;
-			delta -= list[inconsistent+1].tv_sec*NSEC_PER_SEC;
+			delta -= list[inconsistent+1].tv_sec * NSEC_PER_SEC;
 			delta -= list[inconsistent+1].tv_nsec;
 			printf("Delta: %llu ns\n", delta);
 			fflush(0);
 			/* timestamp inconsistency*/
 			t = time(0);
 			printf("%s\n", ctime(&t));
-			printf("FAILED\n");
+			printf("[FAILED]\n");
 			return -1;
 		}
 		now = list[0].tv_sec;
 	}
-	printf("PASSED\n");
+	printf("[OK]\n");
 	return 0;
 }
 
 
 int main(int argc, char *argv[])
 {
-	int clockid, userclock=-1, maxclocks, opt;
-	int runtime = 30;
+	int clockid, opt;
+	int userclock = CLOCK_REALTIME;
+	int maxclocks = NR_CLOCKIDS;
+	int runtime = 10;
 	struct timespec ts;
 
 	/* Process arguments */
-	while ((opt = getopt(argc, argv, "t:c:"))!=-1) {
-		switch(opt) {
+	while ((opt = getopt(argc, argv, "t:c:")) != -1) {
+		switch (opt) {
 		case 't':
 			runtime = atoi(optarg);
 			break;
 		case 'c':
 			userclock = atoi(optarg);
-			maxclocks = userclock+1;
+			maxclocks = userclock + 1;
 			break;
 		default:
 			printf("Usage: %s [-t <secs>] [-c <clockid>]\n", argv[0]);
@@ -175,23 +189,16 @@ int main(int argc, char *argv[])
 
 	setbuf(stdout, NULL);
 
-	if (userclock == -1) {
-		userclock = CLOCK_REALTIME;
-		maxclocks = NR_CLOCKIDS;
-	}
-
-	for (clockid=userclock; clockid < maxclocks; clockid++) {
+	for (clockid = userclock; clockid < maxclocks; clockid++) {
 
 		if (clockid == CLOCK_HWSPECIFIC)
 			continue;
 
 		if (!clock_gettime(clockid, &ts)) {
-			printf("Consistent %-30s: ", clockstring(clockid));
+			printf("Consistent %-30s ", clockstring(clockid));
 			if (consistency_test(clockid, runtime))
-				return -1;
+				return ksft_exit_fail();
 		}
 	}
-
-
-	return 0;
+	return ksft_exit_pass();
 }

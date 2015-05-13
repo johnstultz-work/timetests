@@ -24,6 +24,8 @@
 
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <sys/time.h>
 #include <sys/timex.h>
 #include <time.h>
@@ -33,10 +35,22 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
+#ifdef KTEST
+#include "../kselftest.h"
+#else
+static inline int ksft_exit_pass(void)
+{
+	exit(0);
+}
+static inline int ksft_exit_fail(void)
+{
+	exit(1);
+}
+#endif
 
 #define NSEC_PER_SEC 1000000000LL
 
-int main(int argv, char** argc)
+int main(int argv, char **argc)
 {
 	struct timex tx;
 	int ret, ppm;
@@ -52,7 +66,7 @@ int main(int argv, char** argc)
 	ppm = 500;
 	ret = 0;
 
-	while(pid != waitpid(pid, &ret, WNOHANG)) {
+	while (pid != waitpid(pid, &ret, WNOHANG)) {
 		ppm = -ppm;
 		tx.modes = ADJ_FREQUENCY;
 		tx.freq = ppm << 16;
@@ -60,16 +74,16 @@ int main(int argv, char** argc)
 		usleep(500000);
 	}
 
-	if (ret)
-		printf("FAILED\n");
-	else
-		printf("PASSED\n");
-
-
 	/* Set things back */
 	tx.modes = ADJ_FREQUENCY;
 	tx.offset = 0;
 	adjtimex(&tx);
 
-	return ret;
+
+	if (ret) {
+		printf("[FAILED]\n");
+		return ksft_exit_fail();
+	}
+	printf("[OK]\n");
+	return ksft_exit_pass();
 }

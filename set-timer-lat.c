@@ -21,12 +21,24 @@
 
 
 #include <stdio.h>
+#include <unistd.h>
 #include <time.h>
 #include <string.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <pthread.h>
-
+#ifdef KTEST
+#include "../kselftest.h"
+#else
+static inline int ksft_exit_pass(void)
+{
+	exit(0);
+}
+static inline int ksft_exit_fail(void)
+{
+	exit(1);
+}
+#endif
 
 #define CLOCK_REALTIME			0
 #define CLOCK_MONOTONIC			1
@@ -46,7 +58,7 @@
 #define NSEC_PER_SEC 1000000000ULL
 #define UNRESONABLE_LATENCY 40000000 /* 40ms in nanosecs */
 
-#define TIMER_SECS 3
+#define TIMER_SECS 1
 int alarmcount;
 int clock_id;
 struct timespec start_time;
@@ -85,6 +97,7 @@ char *clockstring(int clockid)
 long long timespec_sub(struct timespec a, struct timespec b)
 {
 	long long ret = NSEC_PER_SEC * b.tv_sec + b.tv_nsec;
+
 	ret -= NSEC_PER_SEC * a.tv_sec + a.tv_nsec;
 	return ret;
 }
@@ -93,9 +106,9 @@ long long timespec_sub(struct timespec a, struct timespec b)
 void sigalarm(int signo)
 {
 	long long delta_ns;
-        struct timespec ts;
+	struct timespec ts;
 
-        clock_gettime(clock_id, &ts);
+	clock_gettime(clock_id, &ts);
 	alarmcount++;
 
 	delta_ns = timespec_sub(start_time, ts);
@@ -108,7 +121,7 @@ void sigalarm(int signo)
 		max_latency_ns = delta_ns;
 }
 
-void do_timer(int clock_id, int flags)
+int do_timer(int clock_id, int flags)
 {
 	struct sigevent se;
 	timer_t tm1;
@@ -126,8 +139,15 @@ void do_timer(int clock_id, int flags)
 
 	err = timer_create(clock_id, &se, &tm1);
 	if (err) {
+		if ((clock_id == CLOCK_REALTIME_ALARM) ||
+		    (clock_id == CLOCK_BOOTTIME_ALARM)) {
+			printf("%-22s %s missing CAP_WAKE_ALARM?    : [UNSUPPORTED]\n",
+					clockstring(clock_id),
+					flags ? "ABSTIME":"RELTIME");
+			return 0;
+		}
 		printf("%s - timer_create() failed\n", clockstring(clock_id));
-		return;
+		return -1;
 	}
 
 	clock_gettime(clock_id, &start_time);
@@ -138,15 +158,16 @@ void do_timer(int clock_id, int flags)
 		its1.it_value.tv_sec = TIMER_SECS;
 		its1.it_value.tv_nsec = 0;
 	}
-        its1.it_interval.tv_sec = TIMER_SECS;
-        its1.it_interval.tv_nsec = 0;
+	its1.it_interval.tv_sec = TIMER_SECS;
+	its1.it_interval.tv_nsec = 0;
 
 	err = timer_settime(tm1, flags, &its1, &its2);
 	if (err) {
 		printf("%s - timer_settime() failed\n", clockstring(clock_id));
-		return;
+		return -1;
 	}
-	while(alarmcount < 5)
+
+	while (alarmcount < 5)
 		sleep(1);
 
 	printf("%-22s %s max latency: %10lld ns : ",
@@ -154,20 +175,20 @@ void do_timer(int clock_id, int flags)
 			flags ? "ABSTIME":"RELTIME",
 			max_latency_ns);
 
-	if (max_latency_ns < UNRESONABLE_LATENCY)
-		printf("PASS\n");
-	else
-		printf("WARNING\n");
-
 	timer_delete(tm1);
+	if (max_latency_ns < UNRESONABLE_LATENCY) {
+		printf("[OK]\n");
+		return 0;
+	}
+	printf("[FAILED]\n");
+	return -1;
 }
 
-void main(void)
+int main(void)
 {
-	struct timespec ts;
 	struct sigaction act;
-	sigset_t sigmask;
 	int signum = SIGRTMAX;
+	int ret = 0;
 
 	/* Set up signal handler: */
 	sigfillset(&act.sa_mask);
@@ -186,9 +207,10 @@ void main(void)
 				(clock_id == CLOCK_HWSPECIFIC))
 			continue;
 
-		do_timer(clock_id, TIMER_ABSTIME);
-		do_timer(clock_id, 0);
+		ret |= do_timer(clock_id, TIMER_ABSTIME);
+		ret |= do_timer(clock_id, 0);
 	}
-
+	if (ret)
+		return ksft_exit_fail();
+	return ksft_exit_pass();
 }
-

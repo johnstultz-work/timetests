@@ -23,10 +23,22 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
-
-extern char *optarg;
+#ifdef KTEST
+#include "../kselftest.h"
+#else
+static inline int ksft_exit_pass(void)
+{
+	exit(0);
+}
+static inline int ksft_exit_fail(void)
+{
+	exit(1);
+}
+#endif
 
 #define NSEC_PER_SEC 1000000000LL
 
@@ -41,7 +53,7 @@ extern char *optarg;
 
 int is32bits(void)
 {
-       return (sizeof(long) == 4);
+	return (sizeof(long) == 4);
 }
 
 int settime(long long time)
@@ -54,7 +66,7 @@ int settime(long long time)
 
 	ret = settimeofday(&now, NULL);
 
-	printf("Setting time to 0x%lx: %d\n",(long)time, ret);
+	printf("Setting time to 0x%lx: %d\n", (long)time, ret);
 	return ret;
 }
 
@@ -62,7 +74,7 @@ int do_tests(void)
 {
 	int ret;
 
-	system("date");
+	ret = system("date");
 	ret = system("./inconsistency-check -c 0 -t 20");
 	ret |= system("./nanosleep");
 	ret |= system("./nsleep-lat");
@@ -70,18 +82,17 @@ int do_tests(void)
 
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
 	int ret = 0;
 	int opt, dangerous = 0;
 	time_t start;
 
-
 	/* Process arguments */
-        while ((opt = getopt(argc, argv, "d"))!=-1) {
-                switch(opt) {
-                case 'd':
-                        dangerous = 1;
+	while ((opt = getopt(argc, argv, "d")) != -1) {
+		switch (opt) {
+		case 'd':
+			dangerous = 1;
 		}
 	}
 
@@ -92,7 +103,7 @@ int main(int argc, char* argv[])
 		ret = -1;
 		goto out;
 	}
-	if (!settime(YEAR_MAX)){
+	if (!settime(YEAR_MAX)) {
 		ret = -1;
 		goto out;
 	}
@@ -103,28 +114,31 @@ int main(int argc, char* argv[])
 
 	/* Now test behavior near edges */
 	settime(YEAR_1970);
-	if (ret = do_tests())
+	ret = do_tests();
+	if (ret)
 		goto out;
 
-	settime(YEAR_2038-600);
-	if (do_tests())
+	settime(YEAR_2038 - 600);
+	ret = do_tests();
+	if (ret)
 		goto out;
 
 	/* The rest of the tests can blowup on 32bit systems */
 	if (is32bits() && !dangerous)
 		goto out;
 	/* Test rollover behavior 32bit edge */
-	settime(YEAR_2038-10);
-	if (do_tests())
+	settime(YEAR_2038 - 10);
+	ret = do_tests();
+	if (ret)
 		goto out;
 
-	settime(YEAR_2262-600);
-	if (do_tests())
-		goto out;
+	settime(YEAR_2262 - 600);
+	ret = do_tests();
 
 out:
 	/* restore clock */
 	settime(start);
-	return ret;
+	if (ret)
+		return ksft_exit_fail();
+	return ksft_exit_pass();
 }
-

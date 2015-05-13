@@ -22,11 +22,23 @@
 #include <sys/timex.h>
 #include <string.h>
 #include <signal.h>
+#ifdef KTEST
+#include "../kselftest.h"
+#else
+static inline int ksft_exit_pass(void)
+{
+	exit(0);
+}
+static inline int ksft_exit_fail(void)
+{
+	exit(1);
+}
+#endif
 
 
 
 /* clear NTP time_status & time_state */
-void clear_time_state(void)
+int clear_time_state(void)
 {
 	struct timex tx;
 	int ret;
@@ -44,6 +56,8 @@ void clear_time_state(void)
 	tx.modes = ADJ_STATUS;
 	tx.status = 0;
 	ret = adjtimex(&tx);
+
+	return ret;
 }
 
 /* Make sure we cleanup on ctrl-c */
@@ -54,12 +68,12 @@ void handler(int unused)
 }
 
 
-int  main(void)
+int main(void)
 {
 	struct timex tx;
 	struct timespec ts;
 	time_t next_leap;
-	int count =0;
+	int count = 0;
 
 	setbuf(stdout, NULL);
 
@@ -86,7 +100,7 @@ int  main(void)
 		tv.tv_usec = 0;
 		if (settimeofday(&tv, NULL)) {
 			printf("Error: You're likely not running with proper (ie: root) permissions\n");
-			exit(-1);
+			return ksft_exit_fail();
 		}
 		tx.modes = 0;
 		adjtimex(&tx);
@@ -101,6 +115,6 @@ int  main(void)
 		clear_time_state();
 		printf(".");
 	}
-	printf("PASSED\n");
-	return 0;
+	printf("[OK]\n");
+	return ksft_exit_pass();
 }

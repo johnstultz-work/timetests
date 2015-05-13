@@ -1,6 +1,8 @@
 /* CLOCK_MONOTONIC vs CLOCK_MONOTONIC_RAW skew test
  *		by: john stultz (johnstul@us.ibm.com)
+ *		    John Stultz <john.stultz@linaro.org>
  *		(C) Copyright IBM 2012
+ *		(C) Copyright Linaro Limited 2015
  *		Licensed under the GPLv2
  *
  *  To build:
@@ -18,22 +20,37 @@
  */
 
 #include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <sys/time.h>
 #include <sys/timex.h>
 #include <time.h>
+#ifdef KTEST
+#include "../kselftest.h"
+#else
+static inline int ksft_exit_pass(void)
+{
+	exit(0);
+}
+static inline int ksft_exit_fail(void)
+{
+	exit(1);
+}
+#endif
+
 
 #define CLOCK_MONOTONIC_RAW		4
 #define NSEC_PER_SEC 1000000000LL
 
-#define shift_right(x, s) ({    \
-        __typeof__(x) __x = (x);        \
-        __typeof__(s) __s = (s);        \
-        __x < 0 ? -(-__x >> __s) : __x >> __s;  \
+#define shift_right(x, s) ({		\
+	__typeof__(x) __x = (x);	\
+	__typeof__(s) __s = (s);	\
+	__x < 0 ? -(-__x >> __s) : __x >> __s; \
 })
 
 long long llabs(long long val)
 {
-	if (val<0)
+	if (val < 0)
 		val = -val;
 	return val;
 }
@@ -46,6 +63,7 @@ unsigned long long ts_to_nsec(struct timespec ts)
 struct timespec nsec_to_ts(long long ns)
 {
 	struct timespec ts;
+
 	ts.tv_sec = ns/NSEC_PER_SEC;
 	ts.tv_nsec = ns%NSEC_PER_SEC;
 	return ts;
@@ -65,14 +83,15 @@ void get_monotonic_and_raw(struct timespec *mon, struct timespec *raw)
 	struct timespec start, mid, end;
 	long long diff = 0, tmp;
 	int i;
-	for(i=0; i < 3; i++) {
+
+	for (i = 0; i < 3; i++) {
 		long long newdiff;
 
 		clock_gettime(CLOCK_MONOTONIC, &start);
 		clock_gettime(CLOCK_MONOTONIC_RAW, &mid);
 		clock_gettime(CLOCK_MONOTONIC, &end);
 
-		newdiff = diff_timespec(start,end);
+		newdiff = diff_timespec(start, end);
 		if (diff == 0 || newdiff < diff) {
 			diff = newdiff;
 			*raw = mid;
@@ -82,11 +101,11 @@ void get_monotonic_and_raw(struct timespec *mon, struct timespec *raw)
 	}
 }
 
-int main(int argv, char** argc)
+int main(int argv, char **argc)
 {
-	struct timespec mon, raw, bound, start, end;
+	struct timespec mon, raw, start, end;
 	long long delta1, delta2, interval, eppm, ppm;
-	struct timex tx1,tx2;
+	struct timex tx1, tx2;
 
 	setbuf(stdout, NULL);
 
@@ -113,7 +132,7 @@ int main(int argv, char** argc)
 	adjtimex(&tx2);
 	delta2 = diff_timespec(mon, raw);
 
-	interval = diff_timespec(start,end);
+	interval = diff_timespec(start, end);
 
 	/* calculate measured ppm between MONOTONIC and MONOTONIC_RAW */
 	eppm = ((delta2-delta1)*NSEC_PER_SEC)/interval;
@@ -126,10 +145,10 @@ int main(int argv, char** argc)
 	ppm = shift_right(ppm, 16);
 	printf(" %lld.%i(act)", ppm/1000, abs((int)(ppm%1000)));
 
-	if (llabs(eppm - ppm) > 1000){
-		printf("	: FAILED\n");
-		return -1;
+	if (llabs(eppm - ppm) > 1000) {
+		printf("	[FAILED]\n");
+		return ksft_exit_fail();
 	}
-	printf("	: PASSED\n");
-	return 0;
+	printf("	[OK]\n");
+	return  ksft_exit_pass();
 }

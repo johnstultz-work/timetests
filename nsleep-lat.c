@@ -24,6 +24,18 @@
 #include <sys/timex.h>
 #include <string.h>
 #include <signal.h>
+#ifdef KTEST
+#include "../kselftest.h"
+#else
+static inline int ksft_exit_pass(void)
+{
+	exit(0);
+}
+static inline int ksft_exit_fail(void)
+{
+	exit(1);
+}
+#endif
 
 #define NSEC_PER_SEC 1000000000ULL
 
@@ -78,7 +90,7 @@ char *clockstring(int clockid)
 struct timespec timespec_add(struct timespec ts, unsigned long long ns)
 {
 	ts.tv_nsec += ns;
-	while(ts.tv_nsec >= NSEC_PER_SEC) {
+	while (ts.tv_nsec >= NSEC_PER_SEC) {
 		ts.tv_nsec -= NSEC_PER_SEC;
 		ts.tv_sec++;
 	}
@@ -89,6 +101,7 @@ struct timespec timespec_add(struct timespec ts, unsigned long long ns)
 long long timespec_sub(struct timespec a, struct timespec b)
 {
 	long long ret = NSEC_PER_SEC * b.tv_sec + b.tv_nsec;
+
 	ret -= NSEC_PER_SEC * a.tv_sec + a.tv_nsec;
 	return ret;
 }
@@ -111,7 +124,7 @@ int nanosleep_lat_test(int clockid, long long ns)
 
 	/* First check relative latency */
 	clock_gettime(clockid, &start);
-	for (i=0;i<count;i++)
+	for (i = 0; i < count; i++)
 		clock_nanosleep(clockid, 0, &target, NULL);
 	clock_gettime(clockid, &end);
 
@@ -121,7 +134,7 @@ int nanosleep_lat_test(int clockid, long long ns)
 	}
 
 	/* Next check absolute latency */
-	for (i=0;i<count;i++) {
+	for (i = 0; i < count; i++) {
 		clock_gettime(clockid, &start);
 		target = timespec_add(start, ns);
 		clock_nanosleep(clockid, TIMER_ABSTIME, &target, NULL);
@@ -139,10 +152,11 @@ int nanosleep_lat_test(int clockid, long long ns)
 
 
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
 	long long length;
-	int failed = 0, clockid, ret;
+	int clockid, ret;
+
 	for (clockid = CLOCK_REALTIME; clockid < NR_CLOCKIDS; clockid++) {
 
 		/* Skip cputime clockids since nanosleep won't increment cputime */
@@ -151,7 +165,7 @@ int main(int argc, char** argv)
 				clockid == CLOCK_HWSPECIFIC)
 			continue;
 
-		printf("nsleep latency %-31s: ", clockstring(clockid));
+		printf("nsleep latency %-26s ", clockstring(clockid));
 
 		length = 10;
 		while (length <= (NSEC_PER_SEC * 10)) {
@@ -163,14 +177,14 @@ int main(int argc, char** argv)
 		}
 
 		if (ret == UNSUPPORTED) {
-			printf("UNSUPPORTED\n");
+			printf("[UNSUPPORTED]\n");
 			continue;
 		}
 		if (ret < 0) {
-			printf("FAILED\n");
-			return -1;
+			printf("[FAILED]\n");
+			return ksft_exit_fail();
 		}
-		printf("PASSED\n");
+		printf("[OK]\n");
 	}
-	return 0;
+	return ksft_exit_pass();
 }

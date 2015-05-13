@@ -23,10 +23,23 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
+#ifdef KTEST
+#include "../kselftest.h"
+#else
+static inline int ksft_exit_pass(void)
+{
+	exit(0);
+}
+static inline int ksft_exit_fail(void)
+{
+	exit(1);
+}
+#endif
 
 int set_tai(int offset)
 {
 	struct timex tx;
+
 	memset(&tx, 0, sizeof(tx));
 
 	tx.modes = ADJ_TAI;
@@ -38,13 +51,14 @@ int set_tai(int offset)
 int get_tai(void)
 {
 	struct timex tx;
+
 	memset(&tx, 0, sizeof(tx));
 
 	adjtimex(&tx);
 	return tx.tai;
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
 	int i, ret;
 
@@ -56,10 +70,10 @@ int main(int argc, char** argv)
 		ret = set_tai(i);
 		ret = get_tai();
 		if (ret != i) {
-			printf("FAILED! expected: %i got %i\n", i, ret);
-			return -1;
+			printf("[FAILED] expected: %i got %i\n", i, ret);
+			return ksft_exit_fail();
 		}
 	}
-	printf("PASS\n");
-	return 0;
+	printf("[OK]\n");
+	return ksft_exit_pass();
 }
