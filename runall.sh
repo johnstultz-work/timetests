@@ -5,7 +5,10 @@ make
 echo
 echo "Killing ntpd:"
 echo "============"
+service stop ntp
+service stop chrony
 killall -9 ntpd
+killall -9 chrony
 
 # correctness tests, observational only
 echo
@@ -61,6 +64,11 @@ echo "Adjtimex freq adjustment tests:"
 echo "==============================="
 ./change_skew
 ./skew_consistency
+
+echo
+echo "Adjtimex tick adjustment tests:"
+echo "==============================="
+./adjtick
 
 echo
 echo "Clocksource changing tests:"
